@@ -144,6 +144,30 @@ def save_dataset(name:str, dic:dict):
          f.write(json.dumps(dic_to_save))
 
 
+def SPs_to_image(SPs:list[list[tuple[int,int]]]):
+    max_x, max_y = 0,0
+    for SP in SPs:
+        for x,y in SP:
+            max_x = max(x, max_x)
+            max_y = max(y, max_y)
+
+    img = np.zeros((max_x+1,max_y+1), dtype=int)
+    for k,SP in enumerate(SPs):
+        for x,y in SP:
+            img[x,y] = k
+    return img
+
+def image_to_SPs(img:np.ndarray):
+    K = img.max()
+    SPs = [[] for _ in range(K+1)]
+    N,M = img.shape
+
+    for i in range(N):
+        for j in range(M):
+            SPs[img[i,j]].append((i,j))
+    return SPs
+
+
 
 ### Indian Pines
 IP_class = {0:"NoInfo",
@@ -219,6 +243,15 @@ SalinasScene = load_dataset("Salinas_corrected", SS_class, "Salinas Scene", gt_p
 SSmerges = [[[1,2,3],"Brocoli"], [[3,4,5],"Fallow"], [[11,12,13,14],"Lettuce romaine"], [[15,16], "Vinyard"]]
 SalinasSceneMerged = load_dataset("Salinas_corrected", SS_class, "Salinas Scene Merged", gt_path="Salinas_gt",
                                  merges=SSmerges)
+SSA_class = {0:"NoInfo",
+            1:"Brocoli green weeds 1",
+            10:"Corn senesced green weeds",
+            11:"Lettuce romaine-4wk",
+            12:"Lettuce romaine-5wk",
+            13:"Lettuce romaine-6wk",
+            14:"Lettuce romaine-7wk",
+}
+SalinasSceneA = load_dataset("SalinasA_corrected", SSA_class, "Salinas Scene A", gt_path="SalinasA_gt")
 
 
 
