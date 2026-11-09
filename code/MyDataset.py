@@ -72,8 +72,23 @@ def load_dataset(path :str,
     if gt_key==None:
         gt_key = gt_path[0].lower() + gt_path[1:]
 
-    data = scipy.io.loadmat(datasets_folder + path +".mat")[data_key]
-    gt = scipy.io.loadmat(datasets_folder + gt_path + ".mat")[gt_key]
+
+    temp = scipy.io.loadmat(datasets_folder + path +".mat")
+    try:
+        data = temp[data_key]
+    except:
+        print("error in data key")
+        print(temp.keys())
+        assert False
+
+    temp = scipy.io.loadmat(datasets_folder + gt_path + ".mat")
+    try:
+        gt = temp[gt_key]
+    except:
+        print("error in gt key")
+        print(temp.keys())
+        assert False
+         
 
     if merges!=None:
         new_labels = {l:[l,v] for l,v in data_class.items()}
@@ -254,6 +269,62 @@ SSA_class = {0:"NoInfo",
 SalinasSceneA = load_dataset("SalinasA_corrected", SSA_class, "Salinas Scene A", gt_path="SalinasA_gt")
 
 
+### WHU-HI
+WHLongKou_class = {0:"NoInfo",
+                   1:"Corn",
+                   2:"Cotton",
+                   3:"Sesame",
+                   4:"Broad-leaf soybean",
+                   5:"Narrow-laef soybean",
+                   6:"Rice",
+                   7:"Water",
+                   8:"Roads ans houses",
+                   9:"Mixed weed"}
+WhuHiLongKou = load_dataset("WHU_Hi_LongKou", WHLongKou_class, "WHU-Hi LongKou", data_key='WHU_Hi_LongKou', gt_key="WHU_Hi_LongKou_gt")
+
+WHHanChuan_class = {0:"NoInfo",
+                    1:"Strawberry",
+                    2:"Cowpea",
+                    3:"Soybean",
+                    4:"Sorghum",
+                    5:"Water Spinach",
+                    6:"Watermelon",
+                    7:"Greens",
+                    8:"Trees",
+                    9:"Grass",
+                    10:"Red roof",
+                    11:"Gray roof",
+                    12:"Plastic",
+                    13:"Bare soil",
+                    14:"Road",
+                    15:"Bright object",
+                    16:"Water"}
+WhuHiHanChuan = load_dataset("WHU_Hi_HanChuan", WHHanChuan_class, "HWU-Hi HanChuan", data_key="WHU_Hi_HanChuan", gt_key="WHU_Hi_HanChuan_gt")
+
+WHHongHu_class = {0:"NoInfo",
+                   1:"Red roof",
+                   2:"Road",
+                   3:"Bare soil",
+                   4:"Cotton",
+                   5:"Cotton firewood",
+                   6:"Rape",
+                   7:"Chinese cabbage",
+                   8:"Pakchoi",
+                   9:"Cabbage",
+                   10:"Tuber mustard",
+                   11:"Brassica parachinensis",
+                   12:"Brassica chinensis",
+                   13:"Small Brassica chinensis",
+                   14:"Lactuca sativa",
+                   15:"Celtuce",
+                   16:"Film covered lettuce",
+                   17:"Romaine lettuce",
+                   18:"Carrot",
+                   19:"White radish",
+                   20:"Garlic sprout",
+                   21:"Broad bean",
+                   22:"Tree"}
+WhuHiHongHu = load_dataset("WHU_Hi_HongHu", WHHongHu_class, "WHU-Hi HongHu", data_key="WHU_Hi_HongHu", gt_key="WHU_Hi_HongHu_gt")
 
 
 

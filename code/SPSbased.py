@@ -324,6 +324,7 @@ def merge_SPs(SPs_or :list[list[tuple[int,int]]],
     
     SPsDic = {K:[] for K in Ks}
     for K in Ks:
+        print(K, end=" ")
         while nb_cc > K and len(edges)>0:
             k1,k2,_ = edges[0]
             if existing[k1] and existing[k2]:
@@ -387,6 +388,7 @@ def mergedBasedSegmentation(data :np.ndarray, K :int,
     if infos==None:
         infos = computeMergeBasedInfo(data, n_component=n_component)
     SPs_or, neighboors = infos
+    print("finish to compute infos")
 
     return merge_SPs(SPs_or, neighboors, data, K,
                n_component=n_component, varFun=usedVarFun,
