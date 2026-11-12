@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.io
 import json
+import h5py
 from sklearn.preprocessing import StandardScaler
 
 datasets_folder = "datasets/"
@@ -55,13 +56,24 @@ def standardize_data(data:np.ndarray):
         return StandardScaler().fit(data).transform(data)
 
 
+def load_mat(path:str):
+    try:
+        temp = scipy.io.loadmat(path)
+    except NotImplementedError:
+        print("opened " + path + " with h5py")
+        with h5py.File(path, 'r') as f:
+            temp = {key: f[key][()] for key in f.keys()}
+    return temp
+
+
 def load_dataset(path :str,
                  data_class: dict[int, str],
                  dataset_name :str,
                  data_key :str=None,
                  gt_key :str=None,
                  gt_path :str=None,
-                 merges = None):
+                 merges = None,
+                 transpose :bool = False):
     """
     Return the dataset in my format
     """
@@ -73,15 +85,17 @@ def load_dataset(path :str,
         gt_key = gt_path[0].lower() + gt_path[1:]
 
 
-    temp = scipy.io.loadmat(datasets_folder + path +".mat")
+    temp = load_mat(datasets_folder + path + ".mat")
     try:
         data = temp[data_key]
     except:
         print("error in data key")
         print(temp.keys())
         assert False
+    if transpose:
+        data = np.transpose(data, (1, 2, 0))
 
-    temp = scipy.io.loadmat(datasets_folder + gt_path + ".mat")
+    temp = load_mat(datasets_folder + gt_path + ".mat")
     try:
         gt = temp[gt_key]
     except:
@@ -108,7 +122,6 @@ def load_dataset(path :str,
     
 
     data_classes = classes(gt, data_class)
-
 
     dataset = {
         "name": dataset_name,
@@ -183,9 +196,24 @@ def image_to_SPs(img:np.ndarray):
     return SPs
 
 
+INDIAN_PINES = "Indian Pines"
+PAVIA_UNIVERSITY = "Pavia Univesity"
+PAVIA_CENTER = "Pavia Center"
+SALINAS_SCENE = "Salinas Scene"
+SALINAS_SCENE_A = "SAlinas Scene A"
+WHU_HI_LONGKOU = "WHU-Hi LongKou"
+WHU_HI_HANCHUAN = "HWU-Hi HanChuan"
+WHU_HI_HONGHU = "WHU-Hi HongHu"
+HOUSTON_13 = "Houston 13"
+HOUSTON_18 = "Houston 18"
+DIONI = "Dioni"
+LOUKIA = "Loukia" # doesn't work
+NW_AREA_I = "NW-Area I"
+NW_AREA_II = "NW-Area II" # doesn't work
 
-### Indian Pines
-IP_class = {0:"NoInfo",
+def get_class(name):
+    if name == INDIAN_PINES:
+        return {0:"NoInfo",
             1:"Alfalfa",
             2:"Corn-notill",
             3:"Corn-mintill",
@@ -202,21 +230,9 @@ IP_class = {0:"NoInfo",
             14:"Woods",
             15:"Buildings-Grass-Trees-Drives",
             16:"Stone-Steel-Towers"
-}
-IndianPines = load_dataset("Indian_pines_corrected", IP_class, "Indian Pines", gt_path="Indian_pines_gt")
-#save_dataset("indian_pines", IndianPines)
-
-IPmerges = [[[2,3,4],"Corn"], [[5,7],"Grass-Pasture"], [[10,11,12],"Soybean"]]
-IndianPinesMerged = load_dataset("Indian_pines_corrected", IP_class, "Indian Pines Merged", gt_path="Indian_pines_gt",
-                                 merges=IPmerges)
-
-
-
-
-
-
-### Pavia University
-PU_class = {0:"NoInfo",
+        }
+    elif name in [PAVIA_CENTER, PAVIA_UNIVERSITY]:
+        return {0:"NoInfo",
             1:"Asphalt", 
             2:"Meadows",
             3:"Gravel",
@@ -226,16 +242,9 @@ PU_class = {0:"NoInfo",
             7:"Bitumen",
             8:"Self-Blocking Bricks",
             9:"Shadows"
-}
-PaviaUniversity = load_dataset("PaviaU", PU_class, "Pavia University")
-
-
-### Pavia Center
-PaviaCenter = load_dataset("Pavia", PU_class, "Pavia Center")
-
-
-### Salinas Scene
-SS_class = {0:"NoInfo",
+        }
+    elif name == SALINAS_SCENE:
+        return {0:"NoInfo",
             1:"Brocoli green weeds 1",
             2:"Brocoli green weeds 2",
             3:"Fallow",
@@ -252,25 +261,18 @@ SS_class = {0:"NoInfo",
             14:"Lettuce romaine-7wk",
             15:"Vinyard untrained",
             16:"Vinyard vertical trellis"
-}
-SalinasScene = load_dataset("Salinas_corrected", SS_class, "Salinas Scene", gt_path="Salinas_gt")
-
-SSmerges = [[[1,2,3],"Brocoli"], [[3,4,5],"Fallow"], [[11,12,13,14],"Lettuce romaine"], [[15,16], "Vinyard"]]
-SalinasSceneMerged = load_dataset("Salinas_corrected", SS_class, "Salinas Scene Merged", gt_path="Salinas_gt",
-                                 merges=SSmerges)
-SSA_class = {0:"NoInfo",
+        }
+    elif name == SALINAS_SCENE_A:
+        return {0:"NoInfo",
             1:"Brocoli green weeds 1",
             10:"Corn senesced green weeds",
             11:"Lettuce romaine-4wk",
             12:"Lettuce romaine-5wk",
             13:"Lettuce romaine-6wk",
             14:"Lettuce romaine-7wk",
-}
-SalinasSceneA = load_dataset("SalinasA_corrected", SSA_class, "Salinas Scene A", gt_path="SalinasA_gt")
-
-
-### WHU-HI
-WHLongKou_class = {0:"NoInfo",
+        }
+    elif name == WHU_HI_LONGKOU:
+        return {0:"NoInfo",
                    1:"Corn",
                    2:"Cotton",
                    3:"Sesame",
@@ -280,9 +282,8 @@ WHLongKou_class = {0:"NoInfo",
                    7:"Water",
                    8:"Roads ans houses",
                    9:"Mixed weed"}
-WhuHiLongKou = load_dataset("WHU_Hi_LongKou", WHLongKou_class, "WHU-Hi LongKou", data_key='WHU_Hi_LongKou', gt_key="WHU_Hi_LongKou_gt")
-
-WHHanChuan_class = {0:"NoInfo",
+    elif name == WHU_HI_HANCHUAN:
+        return {0:"NoInfo",
                     1:"Strawberry",
                     2:"Cowpea",
                     3:"Soybean",
@@ -299,9 +300,8 @@ WHHanChuan_class = {0:"NoInfo",
                     14:"Road",
                     15:"Bright object",
                     16:"Water"}
-WhuHiHanChuan = load_dataset("WHU_Hi_HanChuan", WHHanChuan_class, "HWU-Hi HanChuan", data_key="WHU_Hi_HanChuan", gt_key="WHU_Hi_HanChuan_gt")
-
-WHHongHu_class = {0:"NoInfo",
+    elif name == WHU_HI_HONGHU:
+        return {0:"NoInfo",
                    1:"Red roof",
                    2:"Road",
                    3:"Bare soil",
@@ -324,7 +324,114 @@ WHHongHu_class = {0:"NoInfo",
                    20:"Garlic sprout",
                    21:"Broad bean",
                    22:"Tree"}
-WhuHiHongHu = load_dataset("WHU_Hi_HongHu", WHHongHu_class, "WHU-Hi HongHu", data_key="WHU_Hi_HongHu", gt_key="WHU_Hi_HongHu_gt")
+    elif name in [HOUSTON_13, HOUSTON_18]:
+        return {0:"NoInfo",
+                 1:"Grass healthy",
+                 2:"Grass stressed",
+                 3:"Trees",
+                 4:"Water",
+                 5:"Residential buildings",
+                 6:"Non-residential buildings",
+                 7:"Road"}
+    elif name in [DIONI, LOUKIA]:
+        return {0:"NoInfo",
+                1:"Dense Urban Fabric",
+                2:"Mineral Extraction Sites",
+                3:"Non Irrigated Arable Land",
+                4:"Fruit Trees",
+                5:"Olive Groves",
+                6:"Broad-leaved forest",
+                7:"Coniferous forest",
+                8:"Mixed Forest",
+                9:"Dense Sderophyllous Vegetation",
+                10:"Sparse Sderophyllous Vegetation",
+                11:"Sparcely Vegetated Areas",
+                12:"Rocks and Sand",
+                13:"Water",
+                14:"Coastal Water"
+        }
+    elif name in [NW_AREA_I, NW_AREA_II]:
+        return {0:"NoInfo",
+                1:"Natural Willow",
+                2:"Tamarix chinensis",
+                3:"Yellow River water",
+                4:"Highway",
+                5:"Earth road",
+                6:"Ecological resoraion pool",
+                7:"Reed",
+                8:"unlabelled"}
+    else:
+        return None
+
+
+
+
+def load_current_dataset(name):
+    c = get_class(name)
+    if c == None:
+        return None
+    if name == INDIAN_PINES:
+        return load_dataset("Indian_pines_corrected", c, name, gt_path="Indian_pines_gt")
+    elif name == PAVIA_UNIVERSITY:
+        return load_dataset("PaviaU", c, name)
+    elif name == PAVIA_CENTER:
+        return load_dataset("Pavia", c, name)
+    elif name == SALINAS_SCENE:
+        return load_dataset("Salinas_corrected", c, name, gt_path="Salinas_gt")
+    elif name == SALINAS_SCENE_A:
+        return load_dataset("SalinasA_corrected", c, name, gt_path="SalinasA_gt")
+    elif name == WHU_HI_LONGKOU:
+        return load_dataset("WHU_Hi_LongKou", c, name, data_key='WHU_Hi_LongKou', gt_key="WHU_Hi_LongKou_gt")
+    elif name == WHU_HI_HANCHUAN:
+        return load_dataset("WHU_Hi_HanChuan", c, name, data_key="WHU_Hi_HanChuan", gt_key="WHU_Hi_HanChuan_gt")
+    elif name == WHU_HI_HONGHU:
+        return load_dataset("WHU_Hi_HongHu", c, name, data_key="WHU_Hi_HongHu", gt_key="WHU_Hi_HongHu_gt")
+    elif name == HOUSTON_13:
+        return load_dataset("Houston13", c, name, data_key="ori_data", gt_key="map", transpose=True)
+    elif name == HOUSTON_18:
+        return load_dataset("Houston18", c, name, data_key="ori_data", gt_key="map", transpose=True)
+    elif name == DIONI:
+        return load_dataset("Dioni", c, name, data_key="ori_data", gt_key="map")
+    elif name == LOUKIA:
+        return load_dataset("Loukia", c, name, data_key="ori_data", gt_key="map")
+    elif name == NW_AREA_I:
+        return load_dataset("NWI_1", c, name, data_key='data', gt_key='label')
+    elif name == NW_AREA_II:
+        return load_dataset("NWI_2", c, name, data_key='data', gt_key='label')
+    else:
+        return None
+
+
+### Indian Pines
+IP_class = {0:"NoInfo",
+            1:"Alfalfa",
+            2:"Corn-notill",
+            3:"Corn-mintill",
+            4:"Corn",
+            5:"Grass-pasture",
+            6:"Grass-trees",
+            7:"Grass-pasture-mowed",
+            8:"Hay-windrowed",
+            9:"Oats",
+            10:"Soybean-notill",
+            11:"Soybean-mintill",
+            12:"Soybean-clean",
+            13:"Wheat",
+            14:"Woods",
+            15:"Buildings-Grass-Trees-Drives",
+            16:"Stone-Steel-Towers"
+}
+#IndianPines = load_dataset("Indian_pines_corrected", IP_class, "Indian Pines", gt_path="Indian_pines_gt")
+#save_dataset("indian_pines", IndianPines)
+
+#IPmerges = [[[2,3,4],"Corn"], [[5,7],"Grass-Pasture"], [[10,11,12],"Soybean"]]
+#IndianPinesMerged = load_dataset("Indian_pines_corrected", IP_class, "Indian Pines Merged", gt_path="Indian_pines_gt",                                merges=IPmerges)
+
+
+### Salinas Scene
+#SSmerges = [[[1,2,3],"Brocoli"], [[3,4,5],"Fallow"], [[11,12,13,14],"Lettuce romaine"], [[15,16], "Vinyard"]]
+#SalinasSceneMerged = load_dataset("Salinas_corrected", SS_class, "Salinas Scene Merged", gt_path="Salinas_gt", merges=SSmerges)
+
 
 
 
@@ -332,7 +439,7 @@ WhuHiHongHu = load_dataset("WHU_Hi_HongHu", WHHongHu_class, "WHU-Hi HongHu", dat
 FoundLambdaCoeff = {
     "DataFormat":{
         # In order: standard, normalized, standardized
-        IndianPines["name"]:{
+        INDIAN_PINES:{
             100:[1, 17, 38],
             200:[1, 33, 76],
             300:[1, 46, 114],
@@ -341,7 +448,7 @@ FoundLambdaCoeff = {
             600:[1, 97, 254],
             700:[1, 119, 296]
         },
-        PaviaUniversity["name"]:{
+        PAVIA_UNIVERSITY:{
             100:[1, 16, 49],
             200:[1, 33, 99],
             300:[1, 47, 149],
@@ -353,7 +460,7 @@ FoundLambdaCoeff = {
     },
     "SimilarityFunction":{
         # In order: average, norm2, norm1, perason
-        IndianPines["name"]:{
+        INDIAN_PINES:{
             50: [17, 26, 16, 9],
             100:[38, 53, 30, 17],
             200:[76, 114, 73, 40],
@@ -362,7 +469,7 @@ FoundLambdaCoeff = {
             500:[202, 305, 191, 103],
             600:[254, 372, 232, 129]
         },
-        PaviaUniversity["name"]:{
+        PAVIA_UNIVERSITY:{
             100:[49, 59, 50, 20],
             200:[99, 121, 101, 40],
             300:[149, 188, 153, 62],
@@ -417,7 +524,7 @@ for size, dic in PaviaCenterLambdaCoeff.items():
 
 ### SLIC, SNIC, ERS hyperparameter value
 hyperparameterValue = {
-    IndianPines["name"]:{
+    INDIAN_PINES:{
         50: [30, 0.005, 8],
         100: [30, 0.005, 17],
         200: [20, 0.003, 33],
@@ -426,7 +533,7 @@ hyperparameterValue = {
         500: [10, 0.001, 88],
         600: [10, 0.001, 106]
     },
-    SalinasScene["name"]:{
+    SALINAS_SCENE:{
         20:[10, 0.001, 4],
         50:[8, 0.0005, 8],
         100:[8, 0.0005, 16],
@@ -436,7 +543,7 @@ hyperparameterValue = {
         700:[1, 0.0001, 104],
         900:[1, 0.0001, 122],
     },
-    PaviaUniversity["name"]:{
+    PAVIA_UNIVERSITY:{
         100:[5, 0.002, 16],
         300:[5, 0.001, 47],
         500:[2, 0.0002, 81],

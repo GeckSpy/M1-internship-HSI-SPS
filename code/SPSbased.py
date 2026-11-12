@@ -38,7 +38,8 @@ def center_distances(SP):
 
 def compute_averages(clusters, dtc=None):
     if type(dtc)==type(None):
-        return np.array([np.average(cluster, axis=0) for cluster in clusters])
+        res = [np.average(cluster, axis=0) for cluster in clusters]
+        return res
     else:
         idtc = [np.zeros(len(d)) for d in dtc]
         for i in range(len(dtc)):
@@ -277,7 +278,7 @@ def merge_SPs(SPs_or :list[list[tuple[int,int]]],
     neighboors:list[set] = [neighboor.copy() for neighboor in neighboors_or]
     TSs = [[trainData[coor] for coor in SP] for SP in SPs]
     averages = compute_averages(TSs, dtc=None)
-
+  
     def simFun(k1, k2, n_component=n_component, compare_comp=compare_comp):
         dtc = [center_distances(SP) for SP in [SPs[k1], SPs[k2]]] if weighted_avg else None
         if n_component==0:

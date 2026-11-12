@@ -361,4 +361,5 @@ def mySNIC(data:np.ndarray, K:int,
     for i in range(height):
         for j in range(width):
             SPs[labels[i,j]].append((i,j))
+    SPs = [l for l in SPs if len(l)!=0]
     return SPs
